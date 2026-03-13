@@ -393,7 +393,7 @@ const pageStyle: CSSProperties = {
   margin: "0 auto",
   padding: 24,
   fontFamily: "Arial, sans-serif",
-  direction: "rtl",
+  direction: "rtl" as any,
   background: "#f4f8fc",
   minHeight: "100vh",
   color: "#12345b",
