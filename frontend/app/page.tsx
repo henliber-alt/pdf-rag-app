@@ -1,32 +1,64 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 const DISCLAIMER =
   "הבהרה חשובה: המידע המוצג במערכת זו נועד למטרות מידע, עזר והתמצאות בלבד. אין באמור משום התחייבות של כלל ביטוח ופיננסים, והמידע אינו מחליף את תנאי הפוליסה המלאים, החריגים, הסייגים והנהלים הרלוונטיים. בכל מקרה של סתירה או אי התאמה, תנאי הפוליסה המלאים והוראות החברה הם הקובעים. כל מענה כפוף לבדיקה, חיתום, נהלי החברה ואישור הגורמים המוסמכים, לרבות מחלקת תביעות לפי העניין.";
 
+type SourceItem = {
+  name?: string;
+  file_name?: string;
+  document_name?: string;
+  page_number?: number;
+  quote?: string;
+  content?: string;
+  web_view_link?: string;
+};
+
+type DocumentItem = {
+  id: number | string;
+  name?: string;
+  modified_time?: string;
+  web_view_link?: string;
+};
+
+type AskResponse = {
+  answer?: string;
+  sources?: SourceItem[];
+};
+
+type SummarizeResponse = {
+  summary?: string;
+};
+
+type CompareResponse = {
+  comparison?: string;
+};
+
 export default function HomePage() {
-  const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState("");
-  const [sources, setSources] = useState([]);
-  const [documents, setDocuments] = useState([]);
-  const [selectedDoc, setSelectedDoc] = useState("");
-  const [compareIds, setCompareIds] = useState([]);
-  const [docSearch, setDocSearch] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [copied, setCopied] = useState(false);
+  const [question, setQuestion] = useState<string>("");
+  const [answer, setAnswer] = useState<string>("");
+  const [sources, setSources] = useState<SourceItem[]>([]);
+  const [documents, setDocuments] = useState<DocumentItem[]>([]);
+  const [selectedDoc, setSelectedDoc] = useState<string>("");
+  const [compareIds, setCompareIds] = useState<string[]>([]);
+  const [docSearch, setDocSearch] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
+  const [copied, setCopied] = useState<boolean>(false);
 
   async function fetchDocuments() {
     try {
       setError("");
       const res = await fetch(`${API_BASE}/api/documents`);
       if (!res.ok) throw new Error("Failed to load documents");
-      const data = await res.json();
-      setDocuments(Array.isArray(data) ? data : []);
-    } catch (err) {
+      const data: unknown = await res.json();
+      setDocuments(Array.isArray(data) ? (data as DocumentItem[]) : []);
+    } catch {
       setError("לא ניתן לטעון את רשימת המסמכים");
       setDocuments([]);
     }
@@ -54,10 +86,10 @@ export default function HomePage() {
 
       if (!res.ok) throw new Error("Ask failed");
 
-      const data = await res.json();
+      const data: AskResponse = await res.json();
       setAnswer(data.answer || "");
       setSources(Array.isArray(data.sources) ? data.sources : []);
-    } catch (err) {
+    } catch {
       setError("אירעה שגיאה בקבלת התשובה");
     } finally {
       setLoading(false);
@@ -82,10 +114,10 @@ export default function HomePage() {
 
       if (!res.ok) throw new Error("Summarize failed");
 
-      const data = await res.json();
+      const data: SummarizeResponse = await res.json();
       setAnswer(data.summary || "");
       setSources([]);
-    } catch (err) {
+    } catch {
       setError("אירעה שגיאה בסיכום המסמך");
     } finally {
       setLoading(false);
@@ -113,10 +145,10 @@ export default function HomePage() {
 
       if (!res.ok) throw new Error("Compare failed");
 
-      const data = await res.json();
+      const data: CompareResponse = await res.json();
       setAnswer(data.comparison || "");
       setSources([]);
-    } catch (err) {
+    } catch {
       setError("אירעה שגיאה בהשוואת המסמכים");
     } finally {
       setLoading(false);
@@ -132,12 +164,12 @@ export default function HomePage() {
       await navigator.clipboard.writeText(textToCopy);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
+    } catch {
       setError("לא ניתן להעתיק את התשובה");
     }
   }
 
-  function toggleCompare(docId) {
+  function toggleCompare(docId: number | string) {
     const id = String(docId);
     setCompareIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
@@ -170,18 +202,22 @@ export default function HomePage() {
           <h2 style={sectionTitleStyle}>שאל שאלה</h2>
 
           <textarea
-  value={question}
-  onChange={(e) => setQuestion(e.target.value)}
-  placeholder={`לדוגמה:
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            placeholder={`לדוגמה:
 מה ההבדלים בין פוליסת מושלם לפוליסה אחרת?
 מה כוללת הפוליסה במקרה של ניתוח בארץ?
 אילו חריגים עיקריים קיימים בפוליסה?
 השווה בין שתי פוליסות בריאות מרכזיות
 סכם לי את הפוליסה של ניתוחים וטיפולים מחליפי ניתוח`}
-  style={textareaStyle}
-/>
+            style={textareaStyle}
+          />
 
-          <button onClick={askQuestion} disabled={loading} style={primaryButtonStyle}>
+          <button
+            onClick={askQuestion}
+            disabled={loading}
+            style={primaryButtonStyle}
+          >
             {loading ? "טוען..." : "שאל"}
           </button>
 
@@ -255,8 +291,8 @@ export default function HomePage() {
             >
               <option value="">בחר מסמך לסיכום</option>
               {documents.map((doc) => (
-                <option key={doc.id} value={doc.id}>
-                  {doc.name}
+                <option key={String(doc.id)} value={String(doc.id)}>
+                  {doc.name || "ללא שם"}
                 </option>
               ))}
             </select>
@@ -281,13 +317,13 @@ export default function HomePage() {
                 const checked = compareIds.includes(String(doc.id));
 
                 return (
-                  <label key={doc.id} style={compareItemStyle}>
+                  <label key={String(doc.id)} style={compareItemStyle}>
                     <input
                       type="checkbox"
                       checked={checked}
                       onChange={() => toggleCompare(doc.id)}
                     />
-                    <span>{doc.name}</span>
+                    <span>{doc.name || "ללא שם"}</span>
                   </label>
                 );
               })}
@@ -318,7 +354,7 @@ export default function HomePage() {
             ) : (
               <div style={{ display: "grid", gap: 12 }}>
                 {filteredDocuments.map((doc) => (
-                  <div key={doc.id} style={docCardStyle}>
+                  <div key={String(doc.id)} style={docCardStyle}>
                     <div>
                       <div style={docNameStyle}>{doc.name || "ללא שם"}</div>
 
@@ -352,7 +388,7 @@ export default function HomePage() {
   );
 }
 
-const pageStyle = {
+const pageStyle: CSSProperties = {
   maxWidth: 1320,
   margin: "0 auto",
   padding: 24,
@@ -363,7 +399,7 @@ const pageStyle = {
   color: "#12345b",
 };
 
-const headerWrapStyle = {
+const headerWrapStyle: CSSProperties = {
   background: "linear-gradient(135deg, #0f4c81 0%, #1b6cb8 100%)",
   color: "#ffffff",
   borderRadius: 18,
@@ -372,7 +408,7 @@ const headerWrapStyle = {
   boxShadow: "0 8px 24px rgba(15,76,129,0.18)",
 };
 
-const titleStyle = {
+const titleStyle: CSSProperties = {
   margin: 0,
   marginBottom: 14,
   fontSize: 34,
@@ -380,7 +416,7 @@ const titleStyle = {
   fontWeight: 700,
 };
 
-const disclaimerTopStyle = {
+const disclaimerTopStyle: CSSProperties = {
   fontSize: 13,
   lineHeight: 1.8,
   color: "#e8f2ff",
@@ -390,14 +426,14 @@ const disclaimerTopStyle = {
   padding: 14,
 };
 
-const layoutStyle = {
+const layoutStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "1.3fr 0.9fr",
   gap: 20,
   alignItems: "start",
 };
 
-const mainCardStyle = {
+const mainCardStyle: CSSProperties = {
   background: "#ffffff",
   border: "1px solid #d8e5f2",
   borderRadius: 16,
@@ -405,12 +441,12 @@ const mainCardStyle = {
   boxShadow: "0 4px 14px rgba(12,51,92,0.06)",
 };
 
-const sideColumnStyle = {
+const sideColumnStyle: CSSProperties = {
   display: "grid",
   gap: 20,
 };
 
-const cardStyle = {
+const cardStyle: CSSProperties = {
   background: "#ffffff",
   border: "1px solid #d8e5f2",
   borderRadius: 16,
@@ -418,21 +454,21 @@ const cardStyle = {
   boxShadow: "0 4px 14px rgba(12,51,92,0.06)",
 };
 
-const sectionTitleStyle = {
+const sectionTitleStyle: CSSProperties = {
   marginTop: 0,
   marginBottom: 16,
   color: "#0f4c81",
   fontSize: 24,
 };
 
-const helperTextStyle = {
+const helperTextStyle: CSSProperties = {
   marginTop: -6,
   marginBottom: 12,
   color: "#5f738d",
   fontSize: 14,
 };
 
-const textareaStyle = {
+const textareaStyle: CSSProperties = {
   width: "100%",
   minHeight: 140,
   padding: 14,
@@ -444,9 +480,10 @@ const textareaStyle = {
   color: "#12345b",
   outline: "none",
   lineHeight: 1.7,
+  boxSizing: "border-box",
 };
 
-const selectStyle = {
+const selectStyle: CSSProperties = {
   width: "100%",
   padding: 12,
   borderRadius: 12,
@@ -455,9 +492,10 @@ const selectStyle = {
   fontSize: 16,
   background: "#ffffff",
   color: "#12345b",
+  boxSizing: "border-box",
 };
 
-const searchInputStyle = {
+const searchInputStyle: CSSProperties = {
   width: "100%",
   padding: 12,
   borderRadius: 12,
@@ -466,9 +504,10 @@ const searchInputStyle = {
   fontSize: 16,
   background: "#ffffff",
   color: "#12345b",
+  boxSizing: "border-box",
 };
 
-const primaryButtonStyle = {
+const primaryButtonStyle: CSSProperties = {
   background: "#0f4c81",
   color: "#ffffff",
   border: "none",
@@ -479,7 +518,7 @@ const primaryButtonStyle = {
   boxShadow: "0 3px 10px rgba(15,76,129,0.18)",
 };
 
-const copyButtonStyle = {
+const copyButtonStyle: CSSProperties = {
   background: "#ffffff",
   color: "#0f4c81",
   border: "1px solid #b8cfe6",
@@ -489,7 +528,7 @@ const copyButtonStyle = {
   fontWeight: 600,
 };
 
-const errorStyle = {
+const errorStyle: CSSProperties = {
   background: "#fff0f0",
   color: "#a62323",
   padding: 12,
@@ -498,7 +537,7 @@ const errorStyle = {
   border: "1px solid #f3c4c4",
 };
 
-const answerHeaderStyle = {
+const answerHeaderStyle: CSSProperties = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
@@ -506,19 +545,19 @@ const answerHeaderStyle = {
   gap: 12,
 };
 
-const answerTitleStyle = {
+const answerTitleStyle: CSSProperties = {
   margin: 0,
   color: "#0f4c81",
 };
 
-const answerBoxStyle = {
+const answerBoxStyle: CSSProperties = {
   background: "#f7fbff",
   border: "1px solid #d7e7f6",
   borderRadius: 14,
   padding: 18,
 };
 
-const answerDisclaimerStyle = {
+const answerDisclaimerStyle: CSSProperties = {
   marginTop: 18,
   paddingTop: 14,
   borderTop: "1px solid #d7e7f6",
@@ -527,7 +566,7 @@ const answerDisclaimerStyle = {
   color: "#4f6480",
 };
 
-const sourceStyle = {
+const sourceStyle: CSSProperties = {
   border: "1px solid #dbe8f5",
   borderRadius: 12,
   padding: 14,
@@ -535,14 +574,14 @@ const sourceStyle = {
   background: "#f9fcff",
 };
 
-const quoteStyle = {
+const quoteStyle: CSSProperties = {
   marginTop: 8,
   fontStyle: "italic",
   color: "#34506f",
   lineHeight: 1.7,
 };
 
-const compareListStyle = {
+const compareListStyle: CSSProperties = {
   maxHeight: 260,
   overflow: "auto",
   border: "1px solid #dbe8f5",
@@ -552,7 +591,7 @@ const compareListStyle = {
   marginBottom: 12,
 };
 
-const compareItemStyle = {
+const compareItemStyle: CSSProperties = {
   display: "flex",
   gap: 10,
   alignItems: "flex-start",
@@ -560,7 +599,7 @@ const compareItemStyle = {
   color: "#12345b",
 };
 
-const docCardStyle = {
+const docCardStyle: CSSProperties = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
@@ -571,18 +610,18 @@ const docCardStyle = {
   gap: 16,
 };
 
-const docNameStyle = {
+const docNameStyle: CSSProperties = {
   fontWeight: "bold",
   marginBottom: 4,
   color: "#12345b",
 };
 
-const docDateStyle = {
+const docDateStyle: CSSProperties = {
   fontSize: 13,
   color: "#6a7f98",
 };
 
-const openLinkStyle = {
+const openLinkStyle: CSSProperties = {
   textDecoration: "none",
   background: "#1b6cb8",
   color: "#ffffff",
@@ -593,6 +632,6 @@ const openLinkStyle = {
   display: "inline-block",
 };
 
-const emptyTextStyle = {
+const emptyTextStyle: CSSProperties = {
   color: "#5f738d",
 };
