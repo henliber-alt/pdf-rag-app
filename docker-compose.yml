@@ -1,0 +1,39 @@
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_DB: pdf_rag
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+    env_file:
+      - ./backend/.env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    build:
+      context: ./frontend
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+volumes:
+  postgres_data:

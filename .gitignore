@@ -1,0 +1,14 @@
+.env
+*.env
+.env.local
+*.local
+*.env.txt
+*.local.txt
+
+__pycache__/
+*.pyc
+
+.next/
+node_modules/
+
+backend/secrets/
