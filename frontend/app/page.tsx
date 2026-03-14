@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://pdf-rag-app-xorl.onrender.com";
 
 const DISCLAIMER =
   "הבהרה חשובה: המידע המוצג במערכת זו נועד למטרות מידע, עזר והתמצאות בלבד. אין באמור משום התחייבות של כלל ביטוח ופיננסים, והמידע אינו מחליף את תנאי הפוליסה המלאים, החריגים, הסייגים והנהלים הרלוונטיים. בכל מקרה של סתירה או אי התאמה, תנאי הפוליסה המלאים והוראות החברה הם הקובעים. כל מענה כפוף לבדיקה, חיתום, נהלי החברה ואישור הגורמים המוסמכים, לרבות מחלקת תביעות לפי העניין.";
@@ -51,18 +51,34 @@ export default function HomePage() {
   const [error, setError] = useState<string>("");
   const [copied, setCopied] = useState<boolean>(false);
 
-  async function fetchDocuments() {
-    try {
-      setError("");
-      const res = await fetch(`${API_BASE}/api/documents`);
-      if (!res.ok) throw new Error("Failed to load documents");
-      const data: unknown = await res.json();
-      setDocuments(Array.isArray(data) ? (data as DocumentItem[]) : []);
-    } catch {
-      setError("לא ניתן לטעון את רשימת המסמכים");
-      setDocuments([]);
+  async function fetchDocuments(retries = 3) {
+  try {
+    setError("");
+
+    const res = await fetch(`${API_BASE}/api/documents`, {
+      method: "GET",
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      throw new Error(`Failed to load documents: ${res.status}`);
     }
+
+    const data = await res.json();
+    setDocuments(Array.isArray(data) ? data : []);
+  } catch (err) {
+    if (retries > 0) {
+      setTimeout(() => {
+        fetchDocuments(retries - 1);
+      }, 1200);
+      return;
+    }
+
+    console.error("fetchDocuments error:", err);
+    setError("לא ניתן לטעון את רשימת המסמכים");
+    setDocuments([]);
   }
+}
 
   useEffect(() => {
     fetchDocuments();
