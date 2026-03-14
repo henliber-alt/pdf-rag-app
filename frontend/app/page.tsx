@@ -3,8 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://pdf-rag-app-xorl.onrender.com";
+const API_BASE = "/backend";
 
 const DISCLAIMER =
   "הבהרה חשובה: המידע המוצג במערכת זו נועד למטרות מידע, עזר והתמצאות בלבד. אין באמור משום התחייבות של כלל ביטוח ופיננסים, והמידע אינו מחליף את תנאי הפוליסה המלאים, החריגים, הסייגים והנהלים הרלוונטיים. בכל מקרה של סתירה או אי התאמה, תנאי הפוליסה המלאים והוראות החברה הם הקובעים. כל מענה כפוף לבדיקה, חיתום, נהלי החברה ואישור הגורמים המוסמכים, לרבות מחלקת תביעות לפי העניין.";
